@@ -35,7 +35,7 @@ namespace FirstLab
 				{
 					Console.WriteLine("Error: the source directory does not exist!");
 				}
-			} 
+			}
 			else
 			{
 				Console.WriteLine("Error: the number of command-line arguments is wrong!");
