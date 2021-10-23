@@ -16,20 +16,19 @@ namespace FirstLab
 
 				if (Directory.Exists(imageFolder))
 				{
-					var cts = new CancellationTokenSource();
-
-					Console.CancelKeyPress += (sender, args) =>
+					using (var cts = new CancellationTokenSource())
 					{
-						cts.Cancel();
-						args.Cancel = true;
-					};
+						Console.CancelKeyPress += (sender, args) =>
+						{
+							cts.Cancel();
+							args.Cancel = true;
+						};
 
-					await foreach (string result in Component.ImageProcessAsync(imageFolder, cts))
-					{
-						Console.WriteLine(result);
+						await foreach (Result result in Component.ImageProcessAsync(imageFolder, cts))
+						{
+							Console.WriteLine(result.FileName + " - " + result.Label + " = " + result.Confidence + ": " + result.BBox[0] + " - " + result.BBox[1] + " - " + result.BBox[2] + " - " + result.BBox[3]);
+						}
 					}
-
-					cts.Dispose();
 				}
 				else
 				{

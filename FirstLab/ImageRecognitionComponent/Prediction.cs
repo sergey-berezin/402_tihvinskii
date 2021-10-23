@@ -41,7 +41,7 @@ namespace ImageRecognitionComponent
 		[ColumnName("height")]
 		public float ImageHeight { get; set; }
 
-		public IReadOnlyList<Result> GetResults(string[] categories, float scoreThres = 0.5f, float iouThres = 0.5f)
+		public IReadOnlyList<Result> GetResults(string[] categories, string fileName, float scoreThres = 0.5f, float iouThres = 0.5f)
 		{
 			List<float[]> postProcesssedResults = new List<float[]>();
 
@@ -128,7 +128,7 @@ namespace ImageRecognitionComponent
 				var conf = res[4];
 				string label = categories[(int)res[5]];
 
-				resultsNms.Add(new Result(res.Take(4).ToArray(), label, conf));
+				resultsNms.Add(new Result(res.Take(4).ToArray(), label, conf, fileName));
 				postProcesssedResults[f] = null;
 
 				var iou = postProcesssedResults.Select(bbox => bbox == null ? float.NaN : BoxIoU(res, bbox)).ToList();
