@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using Microsoft.ML;
 using System.Drawing;
@@ -7,6 +6,7 @@ using System.Threading;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using static Microsoft.ML.Transforms.Image.ImageResizingEstimator;
 
 namespace ImageRecognitionComponent
@@ -17,7 +17,9 @@ namespace ImageRecognitionComponent
 
 		static readonly string[] classesNames = new string[] { "person", "bicycle", "car", "motorbike", "aeroplane", "bus", "train", "truck", "boat", "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella", "handbag", "tie", "suitcase", "frisbee", "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove", "skateboard", "surfboard", "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl", "banana", "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair", "sofa", "pottedplant", "bed", "diningtable", "toilet", "tvmonitor", "laptop", "mouse", "remote", "keyboard", "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush" };
 
-		public static async IAsyncEnumerable<Result> ImageProcessAsync(string imageFolder, CancellationTokenSource cts)
+		public static BlockingCollection<Result> resultCollection = new BlockingCollection<Result>();
+
+		public static void ImageProcess(string imageFolder, CancellationTokenSource cts)
 		{
 			MLContext mlContext = new MLContext();
 
@@ -58,29 +60,34 @@ namespace ImageRecognitionComponent
 
 			for (int i = 0; i < n; i++)
 			{
-				if (ct.IsCancellationRequested)
+				tasks[i] = Task.Factory.StartNew(pi =>
 				{
-					Trace.WriteLine("Cancellation is requested!");
-					break;
-				}
+					if (ct.IsCancellationRequested)
+					{
+						Trace.WriteLine("Cancellation is requested!");
+						return;
+					}
 
-				var bitmap = new Bitmap(Image.FromFile(Path.Combine(imageFolder, fileEntries[i])));
-				Prediction predict = null;
+					int i = (int)pi;
+					var bitmap = new Bitmap(Image.FromFile(Path.Combine(imageFolder, fileEntries[i])));
+					Prediction predict = null;
 
-				lock (predictionEngine)
-				{
-					predict = predictionEngine.Predict(new BitmapData() { Image = bitmap });
-				}
+					lock (predictionEngine)
+					{
+						predict = predictionEngine.Predict(new BitmapData() { Image = bitmap });
+					}
 
-				var results = predict.GetResults(classesNames, fileEntries[i].Split("\\").Last(), 0.3f, 0.7f);
+					var results = predict.GetResults(classesNames, fileEntries[i], 0.3f, 0.7f);
 
-				foreach (var res in results)
-				{
-					yield return res;
-				}
+					foreach (var res in results)
+					{
+						resultCollection.Add(res);
+					}
+				}, i);
 			}
 
-			await Task.WhenAll(tasks.Where(t => t != null));
+			Task.WaitAll(tasks);
+			resultCollection.CompleteAdding();
 
 			sw.Stop();
 			Trace.WriteLine($"Done in {sw.ElapsedMilliseconds} ms.");
