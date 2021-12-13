@@ -8,8 +8,9 @@
         Title="MainWindow" Height="450" Width="800">
     <Grid>
         <ToolBar Height="30" VerticalAlignment="Top" Width="800">
-            <Button Content="Open" Click="OpenButton"/>
+            <Button Name="openButton" Content="Open" Click="OpenButton"/>
             <Button Name="startButton" Content="Start" Click="StartButton"/>
+            <Button Name="resetButton" Content="Reset" Click="ResetButton"/>
         </ToolBar>
         <ListBox Name="ImageListBox" Margin="10,40,10,10">
             <ListBox.ItemContainerStyle>

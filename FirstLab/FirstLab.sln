@@ -8,7 +8,10 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WPF", "WPF\WPF.csproj", "{4BF252BD-ED76-4A46-9635-3D99E2CBBC00}"
 	ProjectSection(ProjectDependencies) = postProject
 		{E3555841-856B-45D9-8800-BB83F7CDE39D} = {E3555841-856B-45D9-8800-BB83F7CDE39D}
+		{9305C58A-C16E-4B30-9D28-103AF30DECA7} = {9305C58A-C16E-4B30-9D28-103AF30DECA7}
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageDataBase", "ImageDataBase\ImageDataBase.csproj", "{9305C58A-C16E-4B30-9D28-103AF30DECA7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,6 +27,10 @@ Global
 		{4BF252BD-ED76-4A46-9635-3D99E2CBBC00}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4BF252BD-ED76-4A46-9635-3D99E2CBBC00}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4BF252BD-ED76-4A46-9635-3D99E2CBBC00}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9305C58A-C16E-4B30-9D28-103AF30DECA7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9305C58A-C16E-4B30-9D28-103AF30DECA7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9305C58A-C16E-4B30-9D28-103AF30DECA7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9305C58A-C16E-4B30-9D28-103AF30DECA7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
