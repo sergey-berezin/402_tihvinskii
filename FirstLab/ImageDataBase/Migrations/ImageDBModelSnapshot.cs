@@ -14,9 +14,9 @@ namespace ImageDataBase.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "5.0.12");
+                .HasAnnotation("ProductVersion", "5.0.13");
 
-            modelBuilder.Entity("ImageDataBase.Image", b =>
+            modelBuilder.Entity("ImageRecognitionContract.Image", b =>
                 {
                     b.Property<int>("ImageId")
                         .ValueGeneratedOnAdd()
@@ -38,7 +38,7 @@ namespace ImageDataBase.Migrations
                     b.ToTable("Images");
                 });
 
-            modelBuilder.Entity("ImageDataBase.ImageData", b =>
+            modelBuilder.Entity("ImageRecognitionContract.ImageData", b =>
                 {
                     b.Property<int>("ImageDataId")
                         .ValueGeneratedOnAdd()
@@ -52,7 +52,7 @@ namespace ImageDataBase.Migrations
                     b.ToTable("ImageData");
                 });
 
-            modelBuilder.Entity("ImageDataBase.ImageObject", b =>
+            modelBuilder.Entity("ImageRecognitionContract.ImageObject", b =>
                 {
                     b.Property<int>("ImageObjectId")
                         .ValueGeneratedOnAdd()
@@ -83,24 +83,24 @@ namespace ImageDataBase.Migrations
                     b.ToTable("ImageObject");
                 });
 
-            modelBuilder.Entity("ImageDataBase.Image", b =>
+            modelBuilder.Entity("ImageRecognitionContract.Image", b =>
                 {
-                    b.HasOne("ImageDataBase.ImageData", "ImagePhoto")
+                    b.HasOne("ImageRecognitionContract.ImageData", "ImagePhoto")
                         .WithMany()
                         .HasForeignKey("ImagePhotoImageDataId");
 
                     b.Navigation("ImagePhoto");
                 });
 
-            modelBuilder.Entity("ImageDataBase.ImageObject", b =>
+            modelBuilder.Entity("ImageRecognitionContract.ImageObject", b =>
                 {
-                    b.HasOne("ImageDataBase.Image", null)
+                    b.HasOne("ImageRecognitionContract.Image", null)
                         .WithMany("ImageObjects")
                         .HasForeignKey("ImageId")
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
-            modelBuilder.Entity("ImageDataBase.Image", b =>
+            modelBuilder.Entity("ImageRecognitionContract.Image", b =>
                 {
                     b.Navigation("ImageObjects");
                 });
