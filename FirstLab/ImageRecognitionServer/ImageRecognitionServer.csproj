@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.13" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="5.0.13">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Uno.UI" Version="4.0.11" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ImageDataBase\ImageDataBase.csproj" />
+    <ProjectReference Include="..\ImageRecognitionComponent\ImageRecognitionComponent.csproj" />
+    <ProjectReference Include="..\ImageRecognitionContract\ImageRecognitionContract.csproj" />
+    <ProjectReference Include="..\WPF\WPF.csproj" />
+  </ItemGroup>
+
+</Project>
