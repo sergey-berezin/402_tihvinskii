@@ -22,7 +22,6 @@ namespace WPF
 	{
 		private string imageFolder = "";
 		private ImmutableDictionary<string, BitmapImage> imageDictionary = ImmutableDictionary.Create<string, BitmapImage>();
-		private CancellationTokenSource cts = new CancellationTokenSource();
 		HttpClient client = new HttpClient();
 
 		private async void ShowDB()
@@ -30,8 +29,8 @@ namespace WPF
 			try
 			{
 				string result = await client.GetStringAsync("https://localhost:5001/show");
-
 				var images = JsonConvert.DeserializeObject<List<ImageRecognitionContract.Image>>(result);
+				imageDictionary = imageDictionary.Clear();
 
 				foreach (ImageRecognitionContract.Image image in images)
 				{
@@ -45,12 +44,11 @@ namespace WPF
 				}
 
 				imageFolder = @"C:\Users\torre\Desktop\Images";
-
 				ImageListBox.ItemsSource = imageDictionary.ToImmutableList();
 			} 
-			catch (Exception ex)
+			catch (HttpRequestException ex)
 			{
-				Trace.WriteLine(ex);
+				MessageBox.Show(ex.Message, "Server Error", MessageBoxButton.OK, MessageBoxImage.Error);
 			}
 		}
 
@@ -110,21 +108,42 @@ namespace WPF
 			{
 				startButton.Content = "Stop";
 
-				var answer = await client.GetAsync("http://localhost:5000/start?imageFolder=" + imageFolder);
-				var result = await answer.Content.ReadAsStringAsync();
-				var images = JsonConvert.DeserializeObject<ImmutableDictionary<string, BitmapImage>>(result);
-
-				foreach (var image in images)
+				try
 				{
-					imageDictionary = imageDictionary.SetItem(image.Key, image.Value);
+					string answer = await client.GetStringAsync("https://localhost:5001/start?imageFolder=" + imageFolder);
+					var images = JsonConvert.DeserializeObject<ImmutableList<Tuple<string, byte[]>>>(answer);
+
+					foreach (var image in images)
+					{
+						Bitmap bmp;
+						using (var ms = new MemoryStream(image.Item2))
+						{
+							bmp = new Bitmap(ms);
+						}
+
+						imageDictionary = imageDictionary.SetItem(image.Item1, BitmapToBitmapImage(bmp));
+					}
+
+					ImageListBox.ItemsSource = imageDictionary.ToImmutableList();
+				}
+				catch (HttpRequestException ex)
+				{
+					MessageBox.Show(ex.Message, "Server Error", MessageBoxButton.OK, MessageBoxImage.Error);
 				}
 
-				ImageListBox.ItemsSource = imageDictionary.ToImmutableList();
+				startButton.Content = "Start";
 			}
 			else
 			{
 				startButton.Content = "Start";
-				await client.GetAsync("http://localhost:5000/stop");
+				try
+				{
+					await client.GetAsync("https://localhost:5001/stop");
+				}
+				catch (HttpRequestException ex)
+				{
+					MessageBox.Show(ex.Message, "Server Error", MessageBoxButton.OK, MessageBoxImage.Error);
+				}
 			}
 
 			ShowDB();
@@ -135,13 +154,18 @@ namespace WPF
 
 		private async void ResetButton(object sender, RoutedEventArgs args)
 		{
-			openButton.IsEnabled = false;
-			startButton.IsEnabled = false;
+			try
+			{
+				openButton.IsEnabled = false;
+				startButton.IsEnabled = false;
 
-			await client.DeleteAsync("http://localhost:5000/clear");
-
-			imageDictionary = imageDictionary.Clear();
-			ImageListBox.ItemsSource = imageDictionary;
+				await client.DeleteAsync("https://localhost:5001/clear");
+				imageDictionary = imageDictionary.Clear();
+			} 
+			catch (HttpRequestException ex)
+			{
+				MessageBox.Show(ex.Message, "Server Error", MessageBoxButton.OK, MessageBoxImage.Error);
+			}
 
 			ShowDB();
 

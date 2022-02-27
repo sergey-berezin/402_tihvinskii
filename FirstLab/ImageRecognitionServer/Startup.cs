@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using System.Threading;
 
 namespace ImageRecognitionServer
 {
@@ -11,7 +12,8 @@ namespace ImageRecognitionServer
 		public void ConfigureServices(IServiceCollection services)
 		{
 			services.AddControllers();
-			services.AddSingleton<ImageDB> (new ImageDB());
+			services.AddSingleton<ImageDB>(new ImageDB());
+			services.AddSingleton<CancellationTokenSource>(new CancellationTokenSource());
 		}
 
 		public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

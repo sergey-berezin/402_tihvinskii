@@ -12,6 +12,7 @@ using System.Drawing.Imaging;
 using System;
 using System.Diagnostics;
 using System.Windows.Media.Imaging;
+using System.Collections.Concurrent;
 
 namespace ImageRecognitionServer.Controllers
 {
@@ -19,42 +20,12 @@ namespace ImageRecognitionServer.Controllers
 	public class ResultsController : ControllerBase
 	{
 		private ImageDB database;
-		private CancellationTokenSource cts = new CancellationTokenSource();
+		private CancellationTokenSource cts;
 
-		public ResultsController(ImageDB database)
+		public ResultsController(ImageDB database, CancellationTokenSource cts)
 		{
 			this.database = database;
-		}
-
-		private Bitmap BitmapImageToBitmap(BitmapImage bitmapImage)
-		{
-			using (MemoryStream outStream = new MemoryStream())
-			{
-				BitmapEncoder enc = new BmpBitmapEncoder();
-				enc.Frames.Add(BitmapFrame.Create(bitmapImage));
-				enc.Save(outStream);
-				Bitmap bitmap = new Bitmap(outStream);
-
-				return new Bitmap(bitmap);
-			}
-		}
-
-		private BitmapImage BitmapToBitmapImage(Bitmap bitmap)
-		{
-			using (var memory = new MemoryStream())
-			{
-				bitmap.Save(memory, ImageFormat.Png);
-				memory.Position = 0;
-
-				var bitmapImage = new BitmapImage();
-				bitmapImage.BeginInit();
-				bitmapImage.StreamSource = memory;
-				bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-				bitmapImage.EndInit();
-				bitmapImage.Freeze();
-
-				return bitmapImage;
-			}
+			this.cts = cts;
 		}
 
 		private byte[] BitmapToByteArray(Bitmap bitmap)
@@ -75,9 +46,9 @@ namespace ImageRecognitionServer.Controllers
 		}
 
 		[Route("start")]
-		public async Task<ImmutableDictionary<string, BitmapImage>> GetResult(string imageFolder)
+		public async Task<ImmutableList<Tuple<string, byte[]>>> GetResult(string imageFolder)
 		{
-			var imageDictionary = ImmutableDictionary.Create<string, BitmapImage>();
+			var imageList = ImmutableList.Create<Tuple<string, byte[]>>();
 
 			var task1 = Task.Factory.StartNew(() => Component.ImageProcess(imageFolder, cts));
 
@@ -89,56 +60,64 @@ namespace ImageRecognitionServer.Controllers
 					{
 						Result result = Component.resultCollection.Take();
 
-						using (var bitmap = new Bitmap(System.Drawing.Image.FromFile(Path.Combine(imageFolder, result.FileName))))
+						if (database.Images.All(o => o.ImageName != result.FileName))
 						{
-							using (var g = Graphics.FromImage(bitmap))
+							var bm = new Bitmap(System.Drawing.Image.FromFile(Path.Combine(imageFolder, result.FileName)));
+
+							ImageRecognitionContract.Image current = new ImageRecognitionContract.Image
 							{
-								g.DrawRectangle(Pens.Red, result.BBox[0], result.BBox[1], result.BBox[2] - result.BBox[0], result.BBox[3] - result.BBox[1]);
+								ImageName = result.FileName,
+								ImageHash = GetImageHash(BitmapToByteArray(bm)),
+								ImagePhoto = new ImageRecognitionContract.ImageData { ImageDataArray = BitmapToByteArray(bm) },
+								ImageObjects = new List<ImageRecognitionContract.ImageObject>() { }
+							};
 
-								using (var brushes = new SolidBrush(Color.FromArgb(50, Color.Red)))
-								{
-									g.FillRectangle(brushes, result.BBox[0], result.BBox[1], result.BBox[2] - result.BBox[0], result.BBox[3] - result.BBox[1]);
-								}
-
-								g.DrawString(result.Label + " " + result.Confidence.ToString("0.00"), new Font("Arial", 12), Brushes.Blue, new PointF(result.BBox[0], result.BBox[1]));
-							}
-
-							if (database.Images.All(o => o.ImageName != result.FileName))
-							{
-								database.Add(new ImageRecognitionContract.Image
-								{
-									ImageName = result.FileName,
-									ImageHash = GetImageHash(BitmapToByteArray(bitmap)),
-									ImagePhoto = new ImageRecognitionContract.ImageData { ImageDataArray = BitmapToByteArray(bitmap) },
-									ImageObjects = new List<ImageRecognitionContract.ImageObject>() { new ImageRecognitionContract.ImageObject { ImageObjectName = result.Label, X1 = result.BBox[0], Y1 = result.BBox[1], X2 = result.BBox[2], Y2 = result.BBox[3] } }
-								});
-							}
-							else
-							{
-								var image = database.Images.Where(o => o.ImageName == result.FileName).First();
-
-								if (!image.ImageObjects.Contains(new ImageRecognitionContract.ImageObject { ImageObjectName = result.Label, X1 = result.BBox[0], Y1 = result.BBox[1], X2 = result.BBox[2], Y2 = result.BBox[3] }))
-								{
-									image.ImagePhoto = new ImageRecognitionContract.ImageData { ImageDataArray = BitmapToByteArray(bitmap) };
-									image.ImageObjects.Add(new ImageRecognitionContract.ImageObject { ImageObjectName = result.Label, X1 = result.BBox[0], X2 = result.BBox[1], Y1 = result.BBox[2], Y2 = result.BBox[3] });
-								}
-							}
-
+							database.Add(current);
 							database.SaveChanges();
-
-							BitmapImage bitmapImage = BitmapToBitmapImage(bitmap);
-							imageDictionary = imageDictionary.SetItem(result.FileName, bitmapImage);
 						}
+
+						var img = database.Images.Where(o => o.ImageName == result.FileName).First();
+
+						Bitmap bitmap;
+						using (var ms = new MemoryStream(img.ImagePhoto.ImageDataArray))
+						{
+							bitmap = new Bitmap(ms);
+						}
+						
+						using (var g = Graphics.FromImage(bitmap))
+						{
+							g.DrawRectangle(Pens.Red, result.BBox[0], result.BBox[1], result.BBox[2] - result.BBox[0], result.BBox[3] - result.BBox[1]);
+
+							using (var brushes = new SolidBrush(Color.FromArgb(50, Color.Red)))
+							{
+								g.FillRectangle(brushes, result.BBox[0], result.BBox[1], result.BBox[2] - result.BBox[0], result.BBox[3] - result.BBox[1]);
+							}
+
+							g.DrawString(result.Label + " " + result.Confidence.ToString("0.00"), new Font("Arial", 12), Brushes.Blue, new PointF(result.BBox[0], result.BBox[1]));
+						}
+
+						var image = database.Images.Where(o => o.ImageName == result.FileName).First();
+
+						if (!image.ImageObjects.Contains(new ImageRecognitionContract.ImageObject { ImageObjectName = result.Label, X1 = result.BBox[0], Y1 = result.BBox[1], X2 = result.BBox[2], Y2 = result.BBox[3] }))
+						{
+							image.ImagePhoto = new ImageRecognitionContract.ImageData { ImageDataArray = BitmapToByteArray(bitmap) };
+							image.ImageObjects.Add(new ImageRecognitionContract.ImageObject { ImageObjectName = result.Label, X1 = result.BBox[0], X2 = result.BBox[1], Y1 = result.BBox[2], Y2 = result.BBox[3] });
+						}
+
+						database.SaveChanges();
+						imageList = imageList.Add(new Tuple<string, byte[]>(result.FileName, BitmapToByteArray(bitmap)));
 					}
 				}
-				catch (InvalidOperationException)
+				catch (InvalidOperationException)	
 				{
 					Trace.WriteLine("That's All!");
 				}
 			}, TaskCreationOptions.LongRunning);
 
 			await Task.WhenAll(task1, task2);
-			return imageDictionary;
+
+			Component.resultCollection = new BlockingCollection<Result>();
+			return imageList;
 		}
 
 		[Route("stop")]
