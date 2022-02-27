@@ -3,20 +3,22 @@ using System;
 using ImageDataBase;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace ImageDataBase.Migrations
 {
     [DbContext(typeof(ImageDB))]
-    partial class ImageDBModelSnapshot : ModelSnapshot
+    [Migration("20211213013002_Initial")]
+    partial class Initial
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "5.0.13");
+                .HasAnnotation("ProductVersion", "5.0.12");
 
-            modelBuilder.Entity("ImageRecognitionContract.Image", b =>
+            modelBuilder.Entity("ImageDataBase.Image", b =>
                 {
                     b.Property<int>("ImageId")
                         .ValueGeneratedOnAdd()
@@ -38,7 +40,7 @@ namespace ImageDataBase.Migrations
                     b.ToTable("Images");
                 });
 
-            modelBuilder.Entity("ImageRecognitionContract.ImageData", b =>
+            modelBuilder.Entity("ImageDataBase.ImageData", b =>
                 {
                     b.Property<int>("ImageDataId")
                         .ValueGeneratedOnAdd()
@@ -52,7 +54,7 @@ namespace ImageDataBase.Migrations
                     b.ToTable("ImageData");
                 });
 
-            modelBuilder.Entity("ImageRecognitionContract.ImageObject", b =>
+            modelBuilder.Entity("ImageDataBase.ImageObject", b =>
                 {
                     b.Property<int>("ImageObjectId")
                         .ValueGeneratedOnAdd()
@@ -83,24 +85,24 @@ namespace ImageDataBase.Migrations
                     b.ToTable("ImageObject");
                 });
 
-            modelBuilder.Entity("ImageRecognitionContract.Image", b =>
+            modelBuilder.Entity("ImageDataBase.Image", b =>
                 {
-                    b.HasOne("ImageRecognitionContract.ImageData", "ImagePhoto")
+                    b.HasOne("ImageDataBase.ImageData", "ImagePhoto")
                         .WithMany()
                         .HasForeignKey("ImagePhotoImageDataId");
 
                     b.Navigation("ImagePhoto");
                 });
 
-            modelBuilder.Entity("ImageRecognitionContract.ImageObject", b =>
+            modelBuilder.Entity("ImageDataBase.ImageObject", b =>
                 {
-                    b.HasOne("ImageRecognitionContract.Image", null)
+                    b.HasOne("ImageDataBase.Image", null)
                         .WithMany("ImageObjects")
                         .HasForeignKey("ImageId")
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
-            modelBuilder.Entity("ImageRecognitionContract.Image", b =>
+            modelBuilder.Entity("ImageDataBase.Image", b =>
                 {
                     b.Navigation("ImageObjects");
                 });
